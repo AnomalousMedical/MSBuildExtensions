@@ -54,9 +54,12 @@ namespace AnomalousMSBuild.Tasks
 
                 String destFileText = sourceFileText.Replace(VersionTag, versionNumber.ToString());
                 String destFileCurText = null;
-                using (TextReader destFileReader = new StreamReader(new BufferedStream(File.OpenRead(DestFile))))
+                if (File.Exists(DestFile))
                 {
-                    destFileCurText = destFileReader.ReadToEnd();
+                    using (TextReader destFileReader = new StreamReader(new BufferedStream(File.OpenRead(DestFile))))
+                    {
+                        destFileCurText = destFileReader.ReadToEnd();
+                    }
                 }
 
                 //Only write file if the contents are not the same
