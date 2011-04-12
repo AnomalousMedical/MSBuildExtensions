@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.Build.Utilities;
 using Microsoft.Build.Framework;
 using System.IO;
+using System.Diagnostics;
 
 namespace AnomalousMSBuild.Tasks
 {
@@ -19,42 +20,52 @@ namespace AnomalousMSBuild.Tasks
         {
             bool success = true;
             int versionNumber = 0;
-            String entriesFile = Path.Combine(Directory, SubversionFolder, EntriesFile);
-            if (File.Exists(entriesFile))
-            {
-                using (TextReader svnFileReader = new StreamReader(File.OpenRead(entriesFile)))
-                {
-                    String versionLine = null;
-                    for (int i = 0; i < VersionLineNumber; ++i)
-                    {
-                        versionLine = svnFileReader.ReadLine();
-                    }
 
-                    Log.LogMessageFromText(String.Format("Version is {0}", versionLine), MessageImportance.High);
-                    if (!int.TryParse(versionLine, out versionNumber))
-                    {
-                        Log.LogWarning("Could not parse version out of file {0} on line {1}. Creating file with 0 as the revision.", entriesFile, VersionLineNumber);
-                    }
-                }
-            }
-            else
+            try
             {
-                Log.LogWarning("Could not find {0}. Creating file with 0 as the revision.", entriesFile);
+                ProcessStartInfo svnversionProcInfo = new ProcessStartInfo("svnversion", Directory);
+                svnversionProcInfo.UseShellExecute = false;
+                svnversionProcInfo.RedirectStandardOutput = true;
+                svnversionProcInfo.CreateNoWindow = true;
+
+                Process svnversionProc = Process.Start(svnversionProcInfo);
+                String line = svnversionProc.StandardOutput.ReadLine();
+                while (svnversionProc.StandardOutput.ReadLine() != null) { }
+
+                char[] seps = { ':' };
+                String[] splitLine = line.Split(seps);
+                String maxRevision = splitLine[splitLine.Length - 1];
+                maxRevision = maxRevision.Replace("M", "").Replace("S", "");
+                versionNumber = int.Parse(maxRevision);
+            }
+            catch (Exception e)
+            {
+                Log.LogWarningFromException(e);
+                Log.LogWarning("File will be built with 0 revision");
             }
 
             try
             {
                 String sourceFileText = null;
-                using (TextReader sourceFileReader = new StreamReader(File.OpenRead(SourceFile)))
+                using (TextReader sourceFileReader = new StreamReader(new BufferedStream(File.OpenRead(SourceFile))))
                 {
                     sourceFileText = sourceFileReader.ReadToEnd();
                 }
 
                 String destFileText = sourceFileText.Replace(VersionTag, versionNumber.ToString());
-
-                using (TextWriter destFileWriter = new StreamWriter(DestFile, false))
+                String destFileCurText = null;
+                using (TextReader destFileReader = new StreamReader(new BufferedStream(File.OpenRead(DestFile))))
                 {
-                    destFileWriter.Write(destFileText);
+                    destFileCurText = destFileReader.ReadToEnd();
+                }
+
+                //Only write file if the contents are not the same
+                if (!destFileText.Equals(destFileCurText))
+                {
+                    using (TextWriter destFileWriter = new StreamWriter(new BufferedStream(File.Open(DestFile, FileMode.Create, FileAccess.Write))))
+                    {
+                        destFileWriter.Write(destFileText);
+                    }
                 }
             }
             catch (Exception e)
@@ -83,54 +94,6 @@ namespace AnomalousMSBuild.Tasks
         /// </summary>
         [Required]
         public String DestFile { get; set; }
-
-        String subversionFolder = ".svn";
-        /// <summary>
-        /// The name of the subversion folder. Defaults to .svn
-        /// </summary>
-        public String SubversionFolder
-        {
-            get
-            {
-                return subversionFolder;
-            }
-            set
-            {
-                subversionFolder = value;
-            }
-        }
-
-        String entriesFile = "entries";
-        /// <summary>
-        /// The name of the entriesFile file. Defaults to entries
-        /// </summary>
-        public String EntriesFile
-        {
-            get
-            {
-                return entriesFile;
-            }
-            set
-            {
-                entriesFile = value;
-            }
-        }
-
-        int versionLineNumber = 4;
-        /// <summary>
-        /// The number of lines in the entries file to read before the version number is found.
-        /// </summary>
-        public int VersionLineNumber
-        {
-            get
-            {
-                return versionLineNumber;
-            }
-            set
-            {
-                versionLineNumber = value;
-            }
-        }
 
         String versionTag = "$WCREV$";
         /// <summary>
