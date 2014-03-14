@@ -1,4 +1,4 @@
-﻿using Microsoft.Build.Framework;
+﻿﻿using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using System;
 using System.Collections.Generic;
@@ -9,7 +9,7 @@ using System.Text;
 
 namespace AnomalousMSBuild.Tasks
 {
-    class SetupFramework : Task
+	public class SetupFramework : Task
 	{
         public SetupFramework()
 		{
@@ -27,11 +27,6 @@ namespace AnomalousMSBuild.Tasks
                 {
                     WorkingDirectory = BasePath
                 });
-            }
-            catch (RunFailedException rfe)
-            {
-                Log.LogError(rfe.Message);
-                return false;
             }
             catch (Exception e)
             {
@@ -59,7 +54,7 @@ namespace AnomalousMSBuild.Tasks
             proc.WaitForExit();
             if (proc.ExitCode != 0)
             {
-                throw new RunFailedException(String.Format("{1} failed with exit code: {0}", proc.ExitCode.ToString(), proc.ProcessName));
+				throw new Exception(String.Format("{1} failed with exit code: {0}", proc.ExitCode.ToString(), proc.ProcessName));
             }
         }
 		
