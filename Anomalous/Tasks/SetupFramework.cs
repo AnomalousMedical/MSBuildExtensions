@@ -1,4 +1,4 @@
-﻿﻿using Microsoft.Build.Framework;
+﻿using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using System;
 using System.Collections.Generic;
@@ -52,9 +52,9 @@ namespace AnomalousMSBuild.Tasks
             }
 
             proc.WaitForExit();
-            if (proc.ExitCode != 0)
+			if (proc.ExitCode > 1) //1 means the link already exists so we ignore that one.
             {
-				throw new Exception(String.Format("{1} failed with exit code: {0}", proc.ExitCode.ToString(), proc.ProcessName));
+				throw new Exception(String.Format("SetupFramework failed with exit code: {0}", proc.ExitCode.ToString()));
             }
         }
 		
