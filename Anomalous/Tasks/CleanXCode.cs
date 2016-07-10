@@ -25,6 +25,9 @@ namespace AnomalousMSBuild.Tasks
 				{ 
 					Log.LogMessageFromText(line, MessageImportance.High);
 				}
+
+				xcodebuildProc.WaitForExit();
+
 				if(xcodebuildProc.ExitCode != 0)
 				{
 					Log.LogError("xcodebuild failed with exit code: {0}", xcodebuildProc.ExitCode.ToString());

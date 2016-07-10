@@ -9,13 +9,14 @@ namespace AnomalousMSBuild.Tasks
 	{
 		public BuildXCode ()
 		{
+			Archs = "i386 x86_64";
 		}
 		
 		public override bool Execute ()
 		{
 			try
             {
-                ProcessStartInfo xcodeBuildProcInfo = new ProcessStartInfo("xcodebuild", String.Format("-configuration {0}", Configuration));
+				ProcessStartInfo xcodeBuildProcInfo = new ProcessStartInfo("xcodebuild", String.Format("-configuration {0} ARCHS=\"{1}\"", Configuration, Archs));
                 xcodeBuildProcInfo.UseShellExecute = false;
                 xcodeBuildProcInfo.RedirectStandardOutput = true;
                 xcodeBuildProcInfo.CreateNoWindow = true;
@@ -49,6 +50,16 @@ namespace AnomalousMSBuild.Tasks
 		/// This will specify the configuration passed to -configuration to xcodebuild.
 		/// </summary>
 		public String Configuration { get; set; }
+
+		/// <summary>
+		/// The archs to build with
+		/// </summary>
+		/// <value>The archs.</value>
+		public String Archs
+		{
+			get;
+			set;
+		}
 	}
 }
 
